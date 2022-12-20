@@ -7,6 +7,14 @@
   - [About gNOIc](#about-gnoic)
   - [Install gNOIc](#install-gnoic)
   - [Use gNOIc](#use-gnoic)
+    - [gNOI Ping](#gnoi-ping)
+    - [gNOI Traceroute](#gnoi-traceroute)
+    - [gNOI Cert](#gnoi-cert)
+    - [Upgrading EOS using gNOI](#upgrading-eos-using-gnoi)
+      - [gNOI OS Install](#gnoi-os-install)
+      - [gNOI OS Activate](#gnoi-os-activate)
+      - [gNOI OS Verify](#gnoi-os-verify)
+      - [gNOI System Reboot](#gnoi-system-reboot)
 - [gNOI demo with Arista using gRPCurl](#gnoi-demo-with-arista-using-grpcurl)
   - [About gRPCurl](#about-grpcurl)
   - [Install GO](#install-go)
@@ -19,18 +27,18 @@
       - [List from a gRPC server (EOS device)](#list-from-a-grpc-server-eos-device)
     - [Execute gNOI RPC with EOS](#execute-gnoi-rpc-with-eos)
 
-### About this repository
+## About this repository
 
 This repository shows gNOI demo with Arista.
 It includes examples using gNOIc and gRPCurl.
 
-### About gRPC
+## About gRPC
 
 gRPC - Google Remote Procedure Call
 
 gRPC uses protobuf and HTTP/2
 
-### About gNOI
+## About gNOI
 
 gNOI - gRPC Network Operations Interface
 
@@ -43,7 +51,7 @@ As example, this gNOI proto file https://github.com/openconfig/gnoi/blob/master/
 - Traceroute executes the traceroute command on the target and streams back the results
 - As you can see in the proto file, the field VRF is not defined for these messages
 
-### About gNOI support on EOS
+## About gNOI support on EOS
 
 https://eos.arista.com/eos-4-24-2f/gnoi/
 
@@ -51,7 +59,7 @@ Examples:
 - https://eos.arista.com/eos-4-22-1f/gnoi-ping/
 - https://eos.arista.com/eos-4-22-1f/gnoi-traceroute/
 
-### EOS
+## EOS
 
 EOS switch configuration:
 ```
@@ -99,14 +107,14 @@ logout
 DC1-L2LEAF2A#exit
 Connection to 10.73.1.118 closed.
 ```
-### gNOI demo with Arista using gNOIc
+## gNOI demo with Arista using gNOIc
 
-#### About gNOIc
+### About gNOIc
 
 gNOIc is a gNOI CLI client
 https://github.com/karimra/gnoic
 
-#### Install gNOIc
+### Install gNOIc
 ```
 bash -c "$(curl -sL https://get-gnoic.kmrd.dev)"
 ```
@@ -118,8 +126,11 @@ version : 0.0.5
  gitURL : https://github.com/karimra/gnoic
    docs : https://gnoic.kmrd.dev
 ```
-#### Use gNOIc
-```
+### Use gNOIc
+
+#### gNOI Ping
+
+```shell
 $ gnoic -a 10.73.1.118:6030 -u arista -p arista --insecure  system ping --destination 172.31.255.0 --count 2 --do-not-resolve
 WARN[0000] "10.73.1.118:6030" could not lookup hostname: lookup 118.1.73.10.in-addr.arpa. on 127.0.0.53:53: no such host
 source: "172.31.255.0"
@@ -141,7 +152,10 @@ avg_time: 32590000
 max_time: 33930000
 std_dev: 1351000
 ```
-```
+
+#### gNOI Traceroute
+
+```shell
 $ gnoic -a 10.73.1.118:6030 -u arista -p arista --insecure  system traceroute --destination 172.31.255.0 --do-not-resolve
 WARN[0000] "10.73.1.118:6030" could not lookup hostname: lookup 118.1.73.10.in-addr.arpa. on 127.0.0.53:53: no such host
 destination_name: "172.31.255.0"
@@ -167,6 +181,9 @@ hop: 2
 address: "172.31.255.0"
 rtt: 71079000
 ```
+
+#### gNOI Cert
+
 ```
 $ gnoic -a 10.73.1.118:6030 -u arista -p arista --insecure cert can-generate-csr
 WARN[0000] "10.73.1.118:6030" could not lookup hostname: lookup 118.1.73.10.in-addr.arpa. on 127.0.0.53:53: no such host
@@ -178,13 +195,95 @@ INFO[0000] "10.73.1.118:6030" key-type=KT_RSA, cert-type=CT_X509, key-size=2048:
 +------------------+------------------+
 ```
 
-### gNOI demo with Arista using gRPCurl
+#### Upgrading EOS using gNOI
 
-#### About gRPCurl
+EOS supports gNOI OS Install/Activate/Verification (4.24.2F+) and gNOI System Reboot/Reboot/RebootStatus (4.27.0F+)
+that can be used to upload the EOS image, activate that image (set the boot-config) so that it boots with it next time,
+verify the image activation was successful and lastly to reboot the device to perform the upgrade.
+
+##### gNOI OS Install
+
+To upload an EOS SWI image to a switch we can use the `gnoi.os.OS/Installation` RPC:
+
+```shell
+gnoic -a 192.0.2.1:6030 --insecure  --gzip -u admin -p admin \
+   os install \
+   --version 4.29.1F \
+   --pkg EOS.swi
+```
+
+Output:
+
+```shell
+INFO[0000] starting install RPC
+INFO[0000] target "192.0.2.1:6030": starting Install stream
+INFO[0003] target "192.0.2.1:6030": TransferProgress bytes_received:5242880
+INFO[0003] target "192.0.2.1:6030": TransferProgress bytes_received:10485760
+...
+INFO[0411] target "192.0.2.1:6030": TransferProgress bytes_received:1030750208
+INFO[0413] target "192.0.2.1:6030": sending TransferEnd
+INFO[0413] target "192.0.2.1:6030": TransferProgress bytes_received:1035993088
+INFO[0413] target "192.0.2.1:6030": TransferContent done...
+```
+
+##### gNOI OS Activate
+
+To activate the new EOS image (equivalent to running `boot system flash:EOS.swi` on the CLI) we can use  the
+`/gnoi.os.OS/Activation` RPC:
+
+```shell
+gnoic -a 192.0.2.1:6030 --insecure  --gzip -u admin -p admin \
+   os activate \
+   --version 4.29.1F \
+   --no-reboot
+```
+
+Output:
+
+```shell
+INFO[0034] target "192.0.2.1:6030" activate response "activate_ok:{}"
+```
+
+##### gNOI OS Verify
+
+```shell
+gnoic -a 192.0.2.1:6030 --insecure  --gzip -u admin -p admin os verify
+```
+
+Output:
+
+```shell
++-------------------+---------+---------------------+
+|    Target Name    | Version | Activation Fail Msg |
++-------------------+---------+---------------------+
+| 192.0.2.1:6030 | 4.29.1F |                     |
++-------------------+---------+---------------------+
+```
+
+##### gNOI System Reboot
+
+To reboot the device we can use `gnoi.system.System/Reboot` RPC and the `COLD` method:
+
+```shell
+gnoic -a 192.0.2.1:6030 --insecure  --gzip -u admin -p admin \
+   system reboot \
+   --method COLD
+```
+
+> Note on older EOS versions you may get the following error message:
+
+```shell
+ERRO[0009] "192.0.2.1:6030" System Reboot failed: rpc error: code = Unavailable desc = error reading from server: EOF
+Error: there was 1 error(s)
+```
+
+## gNOI demo with Arista using gRPCurl
+
+### About gRPCurl
 
 gRPCurl  is a command-line tool that lets you interact with gRPC servers.
 
-#### Install GO
+### Install GO
 
 ```
 $ go version
@@ -203,7 +302,7 @@ $ export GOPATH=$HOME/go
 $ export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 ```
 
-#### Get gNOI repository
+### Get gNOI repository
 
 ```
 $ mkdir -p $GOPATH/src/github.com/openconfig
@@ -214,7 +313,7 @@ $ ls $GOPATH/src/github.com/openconfig
 gnoi
 ```
 
-#### Install gRPCurl
+### Install gRPCurl
 
 ```
 $ go get github.com/fullstorydev/grpcurl
@@ -231,8 +330,8 @@ ls $GOPATH/bin/
 grpcurl
 ```
 
-#### Use gRPCurl
-##### Describe from a proto file
+### Use gRPCurl
+#### Describe from a proto file
 ```
 $ grpcurl --plaintext  --import-path ${GOPATH}/src --proto github.com/openconfig/gnoi/system/system.proto  describe  gnoi.system.System.CancelReboot
 gnoi.system.System.CancelReboot is a method:
@@ -287,8 +386,8 @@ service System {
   rpc Traceroute ( .gnoi.system.TracerouteRequest ) returns ( stream .gnoi.system.TracerouteResponse );
 }
 ```
-##### List
-###### List from a proto file
+#### List
+##### List from a proto file
 
 ```
 $ grpcurl --plaintext  --import-path ${GOPATH}/src --proto github.com/openconfig/gnoi/system/system.proto list
@@ -311,7 +410,7 @@ gnoi.os.OS.Activate
 gnoi.os.OS.Install
 gnoi.os.OS.Verify
 ```
-###### List from a gRPC server (EOS device)
+##### List from a gRPC server (EOS device)
 
 ```
 $ grpcurl --plaintext 10.73.1.105:6030 list
@@ -320,8 +419,9 @@ gnoi.certificate.CertificateManagement
 gnoi.system.System
 grpc.reflection.v1alpha.ServerReflection
 ```
-##### Execute gNOI RPC with EOS
-```
+#### Execute gNOI RPC with EOS
+
+```shell
 $ grpcurl -H 'username: arista'  -H 'password: arista' -d '{"destination": "172.31.255.0", "count": 2, "do_not_resolve":true}' -import-path ${GOPATH}/src -proto github.com/openconfig/gnoi/system/system.proto -plaintext 10.73.1.118:6030 gnoi.system.System/Ping
 {
   "source": "172.31.255.0",
@@ -348,7 +448,8 @@ $ grpcurl -H 'username: arista'  -H 'password: arista' -d '{"destination": "172.
   "stdDev": "2300000"
 }
 ```
-```
+
+```shell
 $ grpcurl -H 'username: arista'  -H 'password: arista' -d '{"destination": "172.31.255.0", "max_ttl": 50, "do_not_resolve":true}' -import-path ${GOPATH}/src -proto github.com/openconfig/gnoi/system/system.proto -plaintext 10.73.1.118:6030 gnoi.system.System/Traceroute
 {
   "destinationName": "172.31.255.0",
